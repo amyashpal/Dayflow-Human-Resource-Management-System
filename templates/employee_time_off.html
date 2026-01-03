@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}My Time Off - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-calendar-alt"></i> My Time Off</h2>
+    <a href="{{ url_for('apply_leave') }}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Apply for Leave
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="leaveTypeTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                    All Requests
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="paid-tab" data-bs-toggle="tab" data-bs-target="#paid" type="button" role="tab">
+                    Paid Time Off
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="sick-tab" data-bs-toggle="tab" data-bs-target="#sick" type="button" role="tab">
+                    Sick Leave
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="unpaid-tab" data-bs-toggle="tab" data-bs-target="#unpaid" type="button" role="tab">
+                    Unpaid Leave
+                </button>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="leaveTypeTabsContent">
+            <!-- All Requests Tab -->
+            <div class="tab-pane fade show active" id="all" role="tabpanel">
+                {% set filtered_requests = leave_requests %}
+                {% include 'leave_table.html' %}
+            </div>
+            
+            <!-- Paid Time Off Tab -->
+            <div class="tab-pane fade" id="paid" role="tabpanel">
+                {% set filtered_requests = leave_requests | selectattr('leave_type', 'equalto', 'paid') | list %}
+                {% include 'leave_table.html' %}
+            </div>
+            
+            <!-- Sick Leave Tab -->
+            <div class="tab-pane fade" id="sick" role="tabpanel">
+                {% set filtered_requests = leave_requests | selectattr('leave_type', 'equalto', 'sick') | list %}
+                {% include 'leave_table.html' %}
+            </div>
+            
+            <!-- Unpaid Leave Tab -->
+            <div class="tab-pane fade" id="unpaid" role="tabpanel">
+                {% set filtered_requests = leave_requests | selectattr('leave_type', 'equalto', 'unpaid') | list %}
+                {% include 'leave_table.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

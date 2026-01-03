@@ -1,0 +1,122 @@
+{% if filtered_requests %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Leave Type</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Duration</th>
+                    <th>Status</th>
+                    <th>Applied On</th>
+                    {% if current_user.role in ['admin', 'hr'] %}
+                    <th>Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in filtered_requests %}
+                <tr>
+                    <td>
+                        <span class="badge bg-{{ 'primary' if request.leave_type == 'paid' else 'info' if request.leave_type == 'sick' else 'secondary' }}">
+                            {{ request.leave_type.title() }} Leave
+                        </span>
+                    </td>
+                    <td>{{ request.start_date.strftime('%b %d, %Y') }}</td>
+                    <td>{{ request.end_date.strftime('%b %d, %Y') }}</td>
+                    <td>{{ request.duration.replace('_', ' ').title() }}</td>
+                    <td>
+                        <span class="badge bg-{{ 'success' if request.status == 'approved' else 'danger' if request.status == 'rejected' else 'warning' }}">
+                            {{ request.status.title() }}
+                        </span>
+                    </td>
+                    <td>{{ request.created_at.strftime('%b %d, %Y') }}</td>
+                    {% if current_user.role in ['admin', 'hr'] and request.status == 'pending' %}
+                    <td>
+                        <button class="btn btn-sm btn-success me-1" onclick="approveLeave({{ request.id }}, 'approve')">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="approveLeave({{ request.id }}, 'reject')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% if request.reason %}
+                <tr class="table-light">
+                    <td colspan="{% if current_user.role in ['admin', 'hr'] %}7{% else %}6{% endif %}">
+                        <small><strong>Reason:</strong> {{ request.reason }}</small>
+                        {% if request.admin_comments %}
+                            <br><small><strong>Admin Comments:</strong> {{ request.admin_comments }}</small>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No leave requests found</h5>
+        <p class="text-muted">You haven't applied for any leave in this category</p>
+        {% if current_user.role == 'employee' %}
+        <a href="{{ url_for('apply_leave') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Apply for Leave
+        </a>
+        {% endif %}
+    </div>
+{% endif %}
+
+{% if current_user.role in ['admin', 'hr'] %}
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approvalModalTitle">Leave Request Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="approvalForm" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" id="approvalAction" name="action">
+                    <div class="mb-3">
+                        <label for="comments" class="form-label">Comments (Optional)</label>
+                        <textarea class="form-control" id="comments" name="comments" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" id="approvalSubmitBtn">Confirm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function approveLeave(leaveId, action) {
+    const modal = new bootstrap.Modal(document.getElementById('approvalModal'));
+    const form = document.getElementById('approvalForm');
+    const title = document.getElementById('approvalModalTitle');
+    const submitBtn = document.getElementById('approvalSubmitBtn');
+    const actionInput = document.getElementById('approvalAction');
+    
+    form.action = '{{ url_for("approve_leave", leave_id=0) }}'.replace('0', leaveId);
+    actionInput.value = action;
+    
+    if (action === 'approve') {
+        title.textContent = 'Approve Leave Request';
+        submitBtn.textContent = 'Approve';
+        submitBtn.className = 'btn btn-success';
+    } else {
+        title.textContent = 'Reject Leave Request';
+        submitBtn.textContent = 'Reject';
+        submitBtn.className = 'btn btn-danger';
+    }
+    
+    modal.show();
+}
+</script>
+{% endif %}

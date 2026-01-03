@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dayflow HRMS{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Minimal Black & White Theme */
+        :root {
+            --primary-black: #000000;
+            --secondary-black: #1a1a1a;
+            --light-gray: #f8f9fa;
+            --medium-gray: #6c757d;
+            --border-gray: #dee2e6;
+            --white: #ffffff;
+            
+            /* Status Colors (Keep for functionality) */
+            --success-green: #28a745;
+            --warning-yellow: #ffc107;
+            --danger-red: #dc3545;
+            --info-blue: #17a2b8;
+            --primary-blue: #007bff;
+        }
+
+        body {
+            background-color: var(--white);
+            color: var(--primary-black);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Navigation */
+        .navbar {
+            background-color: var(--white) !important;
+            border-bottom: 1px solid var(--border-gray);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 0.75rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 600;
+            color: var(--primary-black) !important;
+            font-size: 1.1rem;
+            letter-spacing: -0.5px;
+        }
+
+        .navbar-brand i {
+            margin-right: 8px;
+            font-size: 1rem;
+        }
+
+        .nav-link {
+            color: var(--medium-gray) !important;
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            margin: 0 2px;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-black) !important;
+            background-color: var(--light-gray);
+        }
+
+        .nav-link.active {
+            color: var(--primary-black) !important;
+            background-color: var(--light-gray);
+        }
+
+        .nav-link i {
+            margin-right: 6px;
+            font-size: 0.9rem;
+            width: 16px;
+            text-align: center;
+        }
+
+        .dropdown-menu {
+            border: 1px solid var(--border-gray);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-radius: 8px;
+        }
+
+        .dropdown-item {
+            color: var(--medium-gray);
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--light-gray);
+            color: var(--primary-black);
+        }
+
+        .dropdown-item i {
+            margin-right: 8px;
+            width: 16px;
+            text-align: center;
+        }
+
+        /* Cards */
+        .card {
+            border: 1px solid var(--border-gray);
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background-color: var(--white);
+        }
+
+        .card-header {
+            background-color: var(--light-gray);
+            border-bottom: 1px solid var(--border-gray);
+            padding: 1rem;
+            font-weight: 600;
+            color: var(--primary-black);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-black);
+            border-color: var(--primary-black);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-black);
+            border-color: var(--secondary-black);
+        }
+
+        .btn-outline-primary {
+            color: var(--primary-black);
+            border-color: var(--primary-black);
+            background-color: transparent;
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--primary-black);
+            border-color: var(--primary-black);
+            color: var(--white);
+        }
+
+        .btn-secondary {
+            background-color: var(--medium-gray);
+            border-color: var(--medium-gray);
+            color: var(--white);
+        }
+
+        .btn-outline-secondary {
+            color: var(--medium-gray);
+            border-color: var(--medium-gray);
+        }
+
+        .btn-outline-secondary:hover {
+            background-color: var(--medium-gray);
+            color: var(--white);
+        }
+
+        /* Tables */
+        .table {
+            color: var(--primary-black);
+            border-color: var(--border-gray);
+        }
+
+        .table th {
+            border-color: var(--border-gray);
+            background-color: var(--light-gray);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 0.75rem;
+        }
+
+        .table td {
+            border-color: var(--border-gray);
+            padding: 0.75rem;
+            vertical-align: middle;
+        }
+
+        .table-striped > tbody > tr:nth-of-type(odd) > td {
+            background-color: rgba(0,0,0,0.02);
+        }
+
+        /* Forms */
+        .form-control {
+            border: 1px solid var(--border-gray);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-black);
+            box-shadow: 0 0 0 0.2rem rgba(0,0,0,0.1);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: var(--primary-black);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Status Indicators (Keep Colors) */
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .status-present { background-color: var(--success-green); }
+        .status-absent { background-color: var(--warning-yellow); }
+        .status-leave { background-color: var(--info-blue); }
+
+        /* Badges (Keep Colors for Status) */
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+            border-radius: 4px;
+        }
+
+        /* Employee Cards */
+        .employee-card {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid var(--border-gray);
+            border-radius: 8px;
+        }
+
+        .employee-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border-color: var(--primary-black);
+        }
+
+        .profile-img {
+            width: 48px;
+            height: 48px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid var(--border-gray);
+        }
+
+        /* Alerts */
+        .alert {
+            border-radius: 6px;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        /* Modal */
+        .modal-content {
+            border-radius: 8px;
+            border: 1px solid var(--border-gray);
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--border-gray);
+            background-color: var(--light-gray);
+        }
+
+        .modal-footer {
+            border-top: 1px solid var(--border-gray);
+            background-color: var(--light-gray);
+        }
+
+        /* Pagination */
+        .page-link {
+            color: var(--primary-black);
+            border-color: var(--border-gray);
+        }
+
+        .page-link:hover {
+            color: var(--white);
+            background-color: var(--primary-black);
+            border-color: var(--primary-black);
+        }
+
+        .page-item.active .page-link {
+            background-color: var(--primary-black);
+            border-color: var(--primary-black);
+        }
+
+        /* Utilities */
+        .text-muted {
+            color: var(--medium-gray) !important;
+        }
+
+        .border {
+            border-color: var(--border-gray) !important;
+        }
+
+        /* Icons */
+        .fa-solid, .fas {
+            font-weight: 900;
+        }
+
+        /* Custom spacing */
+        .container {
+            max-width: 1200px;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .navbar-nav {
+                margin-top: 1rem;
+            }
+            
+            .nav-link {
+                padding: 0.75rem 1rem !important;
+                margin: 2px 0;
+            }
+            
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+        }
+
+        /* Loading states */
+        .spinner-border {
+            width: 1.5rem;
+            height: 1.5rem;
+            border-width: 0.2em;
+        }
+
+        /* Focus states for accessibility */
+        .btn:focus,
+        .form-control:focus,
+        .nav-link:focus {
+            outline: 2px solid var(--primary-black);
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    {% if current_user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-briefcase"></i>Dayflow HRMS
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <div class="navbar-nav me-auto">
+                    <a class="nav-link" href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-users"></i>Employees
+                    </a>
+                    <a class="nav-link" href="{{ url_for('attendance') }}">
+                        <i class="fas fa-clock"></i>Attendance
+                    </a>
+                    <a class="nav-link" href="{{ url_for('time_off') }}">
+                        <i class="fas fa-calendar-days"></i>Time Off
+                    </a>
+                    {% if current_user.role in ['admin', 'hr'] %}
+                    <a class="nav-link" href="{{ url_for('admin_payroll') }}">
+                        <i class="fas fa-money-bill"></i>Payroll
+                    </a>
+                    <a class="nav-link" href="{{ url_for('reports_dashboard') }}">
+                        <i class="fas fa-chart-simple"></i>Reports
+                    </a>
+                    {% else %}
+                    <a class="nav-link" href="{{ url_for('salary') }}">
+                        <i class="fas fa-money-bill"></i>My Salary
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <div class="navbar-nav">
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            {% if current_user.profile_picture %}
+                                <img src="{{ url_for('static', filename='uploads/' + current_user.profile_picture) }}" 
+                                     class="rounded-circle me-2" width="24" height="24">
+                            {% else %}
+                                <i class="fas fa-user-circle me-2"></i>
+                            {% endif %}
+                            {{ current_user.first_name }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('profile') }}">
+                                <i class="fas fa-user"></i>My Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('change_password') }}">
+                                <i class="fas fa-key"></i>Change Password
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                <i class="fas fa-arrow-right-from-bracket"></i>Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' if category == 'success' else 'info' }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'check-circle' if category == 'success' else 'info-circle' }} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,564 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics & Reports - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-simple"></i> Analytics & Reports Dashboard</h2>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-primary" onclick="refreshData()">
+            <i class="fas fa-arrows-rotate"></i> Refresh Data
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white" style="background-color: var(--primary-black);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_employees }}</h4>
+                        <p class="mb-0">Total Employees</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ present_today }}</h4>
+                        <p class="mb-0">Present Today</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ on_leave_today }}</h4>
+                        <p class="mb-0">On Leave Today</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-plane fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ "{:,.0f}".format(total_payroll) }}</h4>
+                        <p class="mb-0">Monthly Payroll</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-money-bill fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Categories -->
+<div class="row">
+    <!-- Attendance Reports -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header" style="background-color: var(--primary-black); color: var(--white);">
+                <h5><i class="fas fa-clock"></i> Attendance Reports</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Generate comprehensive attendance reports for analysis and compliance.</p>
+                
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Daily Attendance Report</strong>
+                            <br><small class="text-muted">Today's attendance summary</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('attendance', 'daily')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('attendance', 'daily')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Weekly Attendance Report</strong>
+                            <br><small class="text-muted">Current week attendance analysis</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('attendance', 'weekly')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('attendance', 'weekly')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Monthly Attendance Report</strong>
+                            <br><small class="text-muted">Current month detailed report</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('attendance', 'monthly')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('attendance', 'monthly')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Custom Date Range</strong>
+                            <br><small class="text-muted">Select specific date range</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="showCustomDateModal('attendance')">
+                                <i class="fas fa-calendar"></i> Custom
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payroll Reports -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-success text-white">
+                <h5><i class="fas fa-money-bill"></i> Payroll Reports</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Generate salary slips and payroll reports for employees and management.</p>
+                
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Individual Salary Slips</strong>
+                            <br><small class="text-muted">Generate salary slips for employees</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('payroll', 'salary_slips')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('payroll', 'salary_slips')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Payroll Summary</strong>
+                            <br><small class="text-muted">Company-wide payroll overview</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('payroll', 'summary')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('payroll', 'summary')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Department-wise Payroll</strong>
+                            <br><small class="text-muted">Payroll breakdown by department</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('payroll', 'department')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('payroll', 'department')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Tax & Deductions Report</strong>
+                            <br><small class="text-muted">PF, tax, and other deductions</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('payroll', 'deductions')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('payroll', 'deductions')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Reports Row -->
+<div class="row">
+    <!-- Leave Reports -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-calendar-days"></i> Leave Reports</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Track and analyze employee leave patterns and balances.</p>
+                
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Leave Balance Report</strong>
+                            <br><small class="text-muted">Current leave balances for all employees</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('leave', 'balance')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('leave', 'balance')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Leave History Report</strong>
+                            <br><small class="text-muted">Historical leave data and trends</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('leave', 'history')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('leave', 'history')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Employee Reports -->
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning text-white">
+                <h5><i class="fas fa-users"></i> Employee Reports</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Comprehensive employee data and organizational insights.</p>
+                
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Employee Directory</strong>
+                            <br><small class="text-muted">Complete employee information</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('employee', 'directory')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('employee', 'directory')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>Department Summary</strong>
+                            <br><small class="text-muted">Employee distribution by department</small>
+                        </div>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewReport('employee', 'department_summary')">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportReport('employee', 'department_summary')">
+                                <i class="fas fa-download"></i> CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom Date Range Modal -->
+<div class="modal fade" id="customDateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Custom Date Range Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="customDateForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_date" class="form-label">Start Date</label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_date" class="form-label">End Date</label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="report_format" class="form-label">Report Format</label>
+                        <select class="form-control" id="report_format" name="format">
+                            <option value="view">View Online</option>
+                            <option value="csv">Download CSV</option>
+                        </select>
+                    </div>
+                    <input type="hidden" id="report_type" name="report_type">
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="generateCustomReport()">Generate Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report View Modal -->
+<div class="modal fade" id="reportViewModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reportViewTitle">Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reportContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading report...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-success" id="exportCurrentReport">
+                    <i class="fas fa-download"></i> Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentReportType = '';
+let currentReportSubtype = '';
+
+function viewReport(type, subtype) {
+    currentReportType = type;
+    currentReportSubtype = subtype;
+    
+    const modal = new bootstrap.Modal(document.getElementById('reportViewModal'));
+    const title = document.getElementById('reportViewTitle');
+    const content = document.getElementById('reportContent');
+    
+    // Set title
+    title.textContent = getReportTitle(type, subtype);
+    
+    // Show loading
+    content.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading report...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Load report data
+    fetch('/reports/view?type=' + type + '&subtype=' + subtype)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(html => {
+            content.innerHTML = html;
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error loading report: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function exportReport(type, subtype) {
+    const url = '/reports/export?type=' + type + '&subtype=' + subtype;
+    window.location.href = url;
+}
+
+function showCustomDateModal(type) {
+    document.getElementById('report_type').value = type;
+    const modal = new bootstrap.Modal(document.getElementById('customDateModal'));
+    
+    // Set default dates
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    document.getElementById('start_date').value = lastMonth.toISOString().split('T')[0];
+    document.getElementById('end_date').value = today.toISOString().split('T')[0];
+    
+    modal.show();
+}
+
+function generateCustomReport() {
+    const form = document.getElementById('customDateForm');
+    const formData = new FormData(form);
+    
+    const type = formData.get('report_type');
+    const startDate = formData.get('start_date');
+    const endDate = formData.get('end_date');
+    const format = formData.get('format');
+    
+    if (!startDate || !endDate) {
+        alert('Please select both start and end dates');
+        return;
+    }
+    
+    if (new Date(startDate) > new Date(endDate)) {
+        alert('Start date cannot be after end date');
+        return;
+    }
+    
+    const url = '/reports/custom?type=' + type + '&start_date=' + startDate + '&end_date=' + endDate + '&format=' + format;
+    
+    if (format === 'csv') {
+        window.location.href = url;
+    } else {
+        // Close modal and show report
+        bootstrap.Modal.getInstance(document.getElementById('customDateModal')).hide();
+        
+        setTimeout(() => {
+            viewCustomReport(type, startDate, endDate);
+        }, 300);
+    }
+}
+
+function viewCustomReport(type, startDate, endDate) {
+    const modal = new bootstrap.Modal(document.getElementById('reportViewModal'));
+    const title = document.getElementById('reportViewTitle');
+    const content = document.getElementById('reportContent');
+    
+    title.textContent = `Custom ${type.charAt(0).toUpperCase() + type.slice(1)} Report (${startDate} to ${endDate})`;
+    
+    content.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading custom report...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    fetch('/reports/custom?type=' + type + '&start_date=' + startDate + '&end_date=' + endDate + '&format=view')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text();
+        })
+        .then(html => {
+            content.innerHTML = html;
+        })
+        .catch(error => {
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error loading report: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function getReportTitle(type, subtype) {
+    const titles = {
+        'attendance': {
+            'daily': 'Daily Attendance Report',
+            'weekly': 'Weekly Attendance Report',
+            'monthly': 'Monthly Attendance Report'
+        },
+        'payroll': {
+            'salary_slips': 'Salary Slips Report',
+            'summary': 'Payroll Summary Report',
+            'department': 'Department-wise Payroll Report',
+            'deductions': 'Tax & Deductions Report'
+        },
+        'leave': {
+            'balance': 'Leave Balance Report',
+            'history': 'Leave History Report'
+        },
+        'employee': {
+            'directory': 'Employee Directory Report',
+            'department_summary': 'Department Summary Report'
+        }
+    };
+    
+    return titles[type]?.[subtype] || 'Report';
+}
+
+function refreshData() {
+    location.reload();
+}
+
+// Export current report
+document.getElementById('exportCurrentReport').addEventListener('click', function() {
+    if (currentReportType && currentReportSubtype) {
+        exportReport(currentReportType, currentReportSubtype);
+    }
+});
+</script>
+{% endblock %}

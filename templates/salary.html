@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Salary Information - {{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="fas fa-money-bill-wave"></i> Salary Information</h2>
+        <p class="text-muted mb-0">{{ user.first_name }} {{ user.last_name }} ({{ user.login_id }})</p>
+    </div>
+    {% if current_user.role in ['admin', 'hr'] and user.id != current_user.id %}
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editSalaryModal">
+            <i class="fas fa-edit"></i> Edit Salary
+        </button>
+    {% endif %}
+</div>
+
+{% if salary_info %}
+<div class="row">
+    <!-- Salary Components -->
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calculator"></i> Salary Components</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-success">Earnings</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Basic Salary</strong></td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.basic_salary) }}</td>
+                            </tr>
+                            <tr>
+                                <td>House Rent Allowance (HRA)</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.hra) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Standard Allowance</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.standard_allowance) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Performance Bonus</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.performance_bonus) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Leave Travel Allowance (LTA)</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.lta) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Fixed Allowance</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.fixed_allowance) }}</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>Total Earnings</strong></td>
+                                <td class="text-end"><strong>₹{{ "{:,.2f}".format(
+                                    salary_info.basic_salary + 
+                                    salary_info.hra + 
+                                    salary_info.standard_allowance + 
+                                    salary_info.performance_bonus + 
+                                    salary_info.lta + 
+                                    salary_info.fixed_allowance
+                                ) }}</strong></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-danger">Deductions</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Provident Fund (Employee)</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.pf_employee) }}</td>
+                            </tr>
+                            <tr>
+                                <td>Professional Tax</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.professional_tax) }}</td>
+                            </tr>
+                            <tr class="table-danger">
+                                <td><strong>Total Deductions</strong></td>
+                                <td class="text-end"><strong>₹{{ "{:,.2f}".format(
+                                    salary_info.pf_employee + 
+                                    salary_info.professional_tax
+                                ) }}</strong></td>
+                            </tr>
+                        </table>
+                        
+                        <h6 class="text-info mt-4">Employer Contributions</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td>Provident Fund (Employer)</td>
+                                <td class="text-end">₹{{ "{:,.2f}".format(salary_info.pf_employer) }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Salary Summary -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Salary Summary</h5>
+            </div>
+            <div class="card-body text-center">
+                {% set gross_salary = salary_info.basic_salary + salary_info.hra + salary_info.standard_allowance + salary_info.performance_bonus + salary_info.lta + salary_info.fixed_allowance %}
+                {% set total_deductions = salary_info.pf_employee + salary_info.professional_tax %}
+                {% set net_salary = gross_salary - total_deductions %}
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Gross Salary</h6>
+                    <h3 class="text-success">₹{{ "{:,.2f}".format(gross_salary) }}</h3>
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Total Deductions</h6>
+                    <h4 class="text-danger">₹{{ "{:,.2f}".format(total_deductions) }}</h4>
+                </div>
+                
+                <hr>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted">Net Salary</h6>
+                    <h2 class="text-primary">₹{{ "{:,.2f}".format(net_salary) }}</h2>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <small class="text-muted">Monthly</small><br>
+                        <strong>₹{{ "{:,.0f}".format(net_salary) }}</strong>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">Yearly</small><br>
+                        <strong>₹{{ "{:,.0f}".format(net_salary * 12) }}</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Salary Breakdown Chart -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-donut"></i> Breakdown</h6>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                         style="width: {{ (salary_info.basic_salary / gross_salary * 100) }}%"
+                         title="Basic Salary: {{ (salary_info.basic_salary / gross_salary * 100)|round(1) }}%">
+                    </div>
+                    <div class="progress-bar bg-info" role="progressbar" 
+                         style="width: {{ (salary_info.hra / gross_salary * 100) }}%"
+                         title="HRA: {{ (salary_info.hra / gross_salary * 100)|round(1) }}%">
+                    </div>
+                    <div class="progress-bar bg-warning" role="progressbar" 
+                         style="width: {{ ((salary_info.standard_allowance + salary_info.performance_bonus + salary_info.lta + salary_info.fixed_allowance) / gross_salary * 100) }}%"
+                         title="Other Allowances: {{ ((salary_info.standard_allowance + salary_info.performance_bonus + salary_info.lta + salary_info.fixed_allowance) / gross_salary * 100)|round(1) }}%">
+                    </div>
+                </div>
+                <small class="text-muted">
+                    <span class="badge bg-success">Basic</span>
+                    <span class="badge bg-info">HRA</span>
+                    <span class="badge bg-warning">Allowances</span>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Salary History -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5><i class="fas fa-history"></i> Salary History</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Effective Date</th>
+                        <th>Basic Salary</th>
+                        <th>Gross Salary</th>
+                        <th>Net Salary</th>
+                        <th>Updated By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ salary_info.created_at.strftime('%B %d, %Y') }}</td>
+                        <td>₹{{ "{:,.2f}".format(salary_info.basic_salary) }}</td>
+                        <td>₹{{ "{:,.2f}".format(gross_salary) }}</td>
+                        <td>₹{{ "{:,.2f}".format(net_salary) }}</td>
+                        <td>System</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- No Salary Information -->
+<div class="card">
+    <div class="card-body text-center py-5">
+        <i class="fas fa-money-bill-wave fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No Salary Information Available</h4>
+        <p class="text-muted">Salary details have not been configured for this employee.</p>
+        {% if current_user.role in ['admin', 'hr'] %}
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editSalaryModal">
+                <i class="fas fa-plus"></i> Set Up Salary
+            </button>
+        {% else %}
+            <p class="text-muted">Please contact HR to set up your salary information.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Edit Salary Modal (Admin/HR Only) -->
+{% if current_user.role in ['admin', 'hr'] %}
+<div class="modal fade" id="editSalaryModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ 'Edit' if salary_info else 'Set Up' }} Salary Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('salary', employee_id=user.id) }}">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">Earnings</h6>
+                            <div class="mb-3">
+                                <label for="basic_salary" class="form-label">Basic Salary *</label>
+                                <input type="number" class="form-control" id="basic_salary" name="basic_salary" 
+                                       value="{{ salary_info.basic_salary if salary_info else '' }}" 
+                                       step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="hra" class="form-label">HRA</label>
+                                <input type="number" class="form-control" id="hra" name="hra" 
+                                       value="{{ salary_info.hra if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label for="standard_allowance" class="form-label">Standard Allowance</label>
+                                <input type="number" class="form-control" id="standard_allowance" name="standard_allowance" 
+                                       value="{{ salary_info.standard_allowance if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label for="performance_bonus" class="form-label">Performance Bonus</label>
+                                <input type="number" class="form-control" id="performance_bonus" name="performance_bonus" 
+                                       value="{{ salary_info.performance_bonus if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label for="lta" class="form-label">LTA</label>
+                                <input type="number" class="form-control" id="lta" name="lta" 
+                                       value="{{ salary_info.lta if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label for="fixed_allowance" class="form-label">Fixed Allowance</label>
+                                <input type="number" class="form-control" id="fixed_allowance" name="fixed_allowance" 
+                                       value="{{ salary_info.fixed_allowance if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-danger">Deductions</h6>
+                            <div class="mb-3">
+                                <label for="pf_employee" class="form-label">PF (Employee)</label>
+                                <input type="number" class="form-control" id="pf_employee" name="pf_employee" 
+                                       value="{{ salary_info.pf_employee if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label for="pf_employer" class="form-label">PF (Employer)</label>
+                                <input type="number" class="form-control" id="pf_employer" name="pf_employer" 
+                                       value="{{ salary_info.pf_employer if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                            <div class="mb-3">
+                                <label for="professional_tax" class="form-label">Professional Tax</label>
+                                <input type="number" class="form-control" id="professional_tax" name="professional_tax" 
+                                       value="{{ salary_info.professional_tax if salary_info else '' }}" 
+                                       step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

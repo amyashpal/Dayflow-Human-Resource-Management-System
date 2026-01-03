@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Payroll Management - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-money-bill-wave"></i> Payroll Management</h2>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-primary" onclick="exportPayroll()">
+            <i class="fas fa-download"></i> Export Payroll
+        </button>
+        <button type="button" class="btn btn-outline-success" onclick="generatePayslips()">
+            <i class="fas fa-file-pdf"></i> Generate Payslips
+        </button>
+    </div>
+</div>
+
+<!-- Payroll Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ employees|length }}</h4>
+                        <p class="mb-0">Total Employees</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ employees_with_salary|length }}</h4>
+                        <p class="mb-0">Salary Configured</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ (employees|length) - (employees_with_salary|length) }}</h4>
+                        <p class="mb-0">Pending Setup</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>₹{{ "{:,.0f}".format(total_payroll) }}</h4>
+                        <p class="mb-0">Total Monthly Payroll</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calculator fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Payroll Table -->
+<div class="card">
+    <div class="card-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5><i class="fas fa-list"></i> Employee Payroll</h5>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-search"></i></span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by employee name...">
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        {% if employees %}
+            <div class="table-responsive">
+                <table class="table table-striped" id="payrollTable">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Department</th>
+                            <th>Basic Salary</th>
+                            <th>Gross Salary</th>
+                            <th>Deductions</th>
+                            <th>Net Salary</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for employee in employees %}
+                        <tr data-employee="{{ employee.first_name }} {{ employee.last_name }}">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if employee.profile_picture %}
+                                        <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                                             class="rounded-circle me-2" width="32" height="32" style="object-fit: cover;">
+                                    {% else %}
+                                        <div class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center me-2" 
+                                             style="width: 32px; height: 32px;">
+                                            <i class="fas fa-user text-white fa-sm"></i>
+                                        </div>
+                                    {% endif %}
+                                    <div>
+                                        <strong>{{ employee.first_name }} {{ employee.last_name }}</strong><br>
+                                        <small class="text-muted">{{ employee.login_id }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ employee.department or 'Not Assigned' }}</td>
+                            <td>
+                                {% if employee.salary_info %}
+                                    ₹{{ "{:,.2f}".format(employee.salary_info.basic_salary) }}
+                                {% else %}
+                                    <span class="text-muted">Not Set</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if employee.salary_info %}
+                                    {% set gross = employee.salary_info.basic_salary + employee.salary_info.hra + employee.salary_info.standard_allowance + employee.salary_info.performance_bonus + employee.salary_info.lta + employee.salary_info.fixed_allowance %}
+                                    ₹{{ "{:,.2f}".format(gross) }}
+                                {% else %}
+                                    <span class="text-muted">Not Set</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if employee.salary_info %}
+                                    {% set deductions = employee.salary_info.pf_employee + employee.salary_info.professional_tax %}
+                                    ₹{{ "{:,.2f}".format(deductions) }}
+                                {% else %}
+                                    <span class="text-muted">Not Set</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if employee.salary_info %}
+                                    {% set gross = employee.salary_info.basic_salary + employee.salary_info.hra + employee.salary_info.standard_allowance + employee.salary_info.performance_bonus + employee.salary_info.lta + employee.salary_info.fixed_allowance %}
+                                    {% set deductions = employee.salary_info.pf_employee + employee.salary_info.professional_tax %}
+                                    {% set net = gross - deductions %}
+                                    <strong class="text-success">₹{{ "{:,.2f}".format(net) }}</strong>
+                                {% else %}
+                                    <span class="text-muted">Not Set</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if employee.salary_info %}
+                                    <span class="badge bg-success">Configured</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('salary', employee_id=employee.id) }}" class="btn btn-outline-primary" title="View/Edit Salary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-info" onclick="viewPayslip({{ employee.id }})" title="View Payslip">
+                                        <i class="fas fa-file-alt"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-success" onclick="generatePayslip({{ employee.id }})" title="Generate Payslip">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No employees found</h4>
+                <p class="text-muted">Add employees to manage their payroll</p>
+                <a href="{{ url_for('register') }}" class="btn btn-primary">
+                    <i class="fas fa-user-plus"></i> Add Employee
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Bulk Actions -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h5><i class="fas fa-cogs"></i> Bulk Actions</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card border-primary">
+                    <div class="card-body text-center">
+                        <i class="fas fa-percentage fa-2x text-primary mb-3"></i>
+                        <h6>Apply Salary Increment</h6>
+                        <p class="text-muted small">Apply percentage increase to all employees</p>
+                        <button class="btn btn-primary btn-sm" onclick="showIncrementModal()">
+                            <i class="fas fa-arrow-up"></i> Apply Increment
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <i class="fas fa-gift fa-2x text-success mb-3"></i>
+                        <h6>Apply Bonus</h6>
+                        <p class="text-muted small">Add performance bonus to selected employees</p>
+                        <button class="btn btn-success btn-sm" onclick="showBonusModal()">
+                            <i class="fas fa-plus"></i> Add Bonus
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-info">
+                    <div class="card-body text-center">
+                        <i class="fas fa-file-export fa-2x text-info mb-3"></i>
+                        <h6>Export Reports</h6>
+                        <p class="text-muted small">Generate payroll reports and summaries</p>
+                        <button class="btn btn-info btn-sm" onclick="showExportModal()">
+                            <i class="fas fa-download"></i> Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Salary Increment Modal -->
+<div class="modal fade" id="incrementModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Apply Salary Increment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('bulk_salary_update') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="increment_percentage" class="form-label">Increment Percentage</label>
+                        <input type="number" class="form-control" id="increment_percentage" name="increment_percentage" 
+                               step="0.1" min="0" max="100" required>
+                        <div class="form-text">Enter percentage increase (e.g., 10 for 10% increase)</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="effective_date" class="form-label">Effective Date</label>
+                        <input type="date" class="form-control" id="effective_date" name="effective_date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="increment_reason" class="form-label">Reason</label>
+                        <textarea class="form-control" id="increment_reason" name="reason" rows="2" 
+                                  placeholder="Annual increment, performance review, etc."></textarea>
+                    </div>
+                    <input type="hidden" name="action" value="increment">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Apply Increment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Bonus Modal -->
+<div class="modal fade" id="bonusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Apply Performance Bonus</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('bulk_salary_update') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="bonus_amount" class="form-label">Bonus Amount (₹)</label>
+                        <input type="number" class="form-control" id="bonus_amount" name="bonus_amount" 
+                               step="0.01" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="bonus_reason" class="form-label">Reason</label>
+                        <textarea class="form-control" id="bonus_reason" name="reason" rows="2" 
+                                  placeholder="Performance bonus, festival bonus, etc." required></textarea>
+                    </div>
+                    <input type="hidden" name="action" value="bonus">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Apply Bonus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Search functionality
+document.getElementById('searchInput').addEventListener('input', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('#payrollTable tbody tr');
+    
+    rows.forEach(row => {
+        const employeeName = row.getAttribute('data-employee');
+        if (employeeName && employeeName.toLowerCase().includes(searchTerm)) {
+            row.style.display = '';
+        } else if (employeeName) {
+            row.style.display = 'none';
+        }
+    });
+});
+
+function showIncrementModal() {
+    const modal = new bootstrap.Modal(document.getElementById('incrementModal'));
+    // Set default effective date to next month
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    document.getElementById('effective_date').value = nextMonth.toISOString().split('T')[0];
+    modal.show();
+}
+
+function showBonusModal() {
+    const modal = new bootstrap.Modal(document.getElementById('bonusModal'));
+    modal.show();
+}
+
+function showExportModal() {
+    alert('Export functionality can be implemented based on specific requirements');
+}
+
+function viewPayslip(employeeId) {
+    window.open(`{{ url_for('salary', employee_id=0) }}`.replace('0', employeeId), '_blank');
+}
+
+function generatePayslip(employeeId) {
+    alert('Payslip generation functionality can be implemented here');
+}
+
+function exportPayroll() {
+    alert('Payroll export functionality can be implemented here');
+}
+
+function generatePayslips() {
+    alert('Bulk payslip generation functionality can be implemented here');
+}
+</script>
+{% endblock %}

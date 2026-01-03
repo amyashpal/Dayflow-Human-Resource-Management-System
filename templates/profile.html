@@ -1,0 +1,761 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - {{ user.first_name }} {{ user.last_name }}{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <!-- Profile Picture -->
+                <div class="position-relative d-inline-block mb-3">
+                    {% if user.profile_picture %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.profile_picture) }}" 
+                             class="rounded-circle" width="120" height="120" style="object-fit: cover;">
+                    {% else %}
+                        <div class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 120px; height: 120px;">
+                            <i class="fas fa-user text-white fa-3x"></i>
+                        </div>
+                    {% endif %}
+                    {% if user.id == current_user.id or current_user.role in ['admin', 'hr'] %}
+                        <button class="btn btn-sm btn-primary position-absolute bottom-0 end-0 rounded-circle" 
+                                data-bs-toggle="modal" data-bs-target="#editPhotoModal">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    {% endif %}
+                </div>
+                
+                <!-- Basic Info -->
+                <h4 class="mb-1">{{ user.first_name }} {{ user.last_name }}</h4>
+                <p class="text-muted mb-1">{{ user.position or 'No Position Assigned' }}</p>
+                <p class="text-muted mb-2">{{ user.login_id }}</p>
+                <span class="badge bg-{{ 'success' if user.role == 'admin' else 'info' if user.role == 'hr' else 'secondary' }} mb-3">
+                    {{ user.role.title() }}
+                </span>
+                
+                <!-- Contact Info -->
+                <div class="text-start">
+                    <div class="mb-2">
+                        <i class="fas fa-envelope text-muted me-2"></i>
+                        <small>{{ user.email }}</small>
+                    </div>
+                    {% if user.phone %}
+                    <div class="mb-2">
+                        <i class="fas fa-phone text-muted me-2"></i>
+                        <small>{{ user.phone }}</small>
+                    </div>
+                    {% endif %}
+                    {% if user.location %}
+                    <div class="mb-2">
+                        <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                        <small>{{ user.location }}</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <!-- Company Info Card -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Company</h6>
+                        <p class="mb-3">{{ user.company.name if user.company else 'Not Assigned' }}</p>
+                        
+                        <h6 class="text-muted">Department</h6>
+                        <p class="mb-3">{{ user.department or 'Not Assigned' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Manager</h6>
+                        <p class="mb-3">
+                            {% if user.manager %}
+                                {{ user.manager.first_name }} {{ user.manager.last_name }}
+                            {% else %}
+                                Not Assigned
+                            {% endif %}
+                        </p>
+                        
+                        <h6 class="text-muted">Date Joined</h6>
+                        <p class="mb-3">{{ user.date_joined.strftime('%B %d, %Y') if user.date_joined else 'Not Available' }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Profile Tabs -->
+<div class="card">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="resume-tab" data-bs-toggle="tab" data-bs-target="#resume" type="button" role="tab">
+                    <i class="fas fa-file-alt"></i> Resume
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="private-tab" data-bs-toggle="tab" data-bs-target="#private" type="button" role="tab">
+                    <i class="fas fa-lock"></i> Private Info
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="salary-tab" data-bs-toggle="tab" data-bs-target="#salary" type="button" role="tab">
+                    <i class="fas fa-money-bill"></i> Salary Info
+                </button>
+            </li>
+            {% if current_user.role == 'employee' %}
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                    <i class="fas fa-shield-alt"></i> Security
+                </button>
+            </li>
+            {% endif %}
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="tab-content" id="profileTabsContent">
+            <!-- Resume Tab -->
+            <div class="tab-pane fade show active" id="resume" role="tabpanel">
+                <div class="row">
+                    <!-- About Section -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">About</h6>
+                                {% if user.id == current_user.id or current_user.role in ['admin', 'hr'] %}
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editAboutModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted small">{{ user.about or 'No description available. Add a short professional description to help others understand your background and expertise.' }}</p>
+                                
+                                <h6 class="mt-4 mb-2">What I love about my job</h6>
+                                <p class="text-muted small">{{ user.job_motivation or 'Share what motivates you and what you enjoy most about your work.' }}</p>
+                                
+                                <h6 class="mt-4 mb-2">Interests and Hobbies</h6>
+                                <p class="text-muted small">{{ user.interests_hobbies or 'Tell us about your personal interests and hobbies outside of work.' }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Skills Section -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Skills</h6>
+                                {% if user.id == current_user.id or current_user.role in ['admin', 'hr'] %}
+                                <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addSkillModal">
+                                    <i class="fas fa-plus"></i> Add Skills
+                                </button>
+                                {% endif %}
+                            </div>
+                            <div class="card-body">
+                                {% if user.skills %}
+                                    {% for skill in user.skills %}
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <div>
+                                            <span class="badge bg-primary">{{ skill.skill_name }}</span>
+                                            {% if skill.proficiency_level %}
+                                                <small class="text-muted">- {{ skill.proficiency_level }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% if user.id == current_user.id or current_user.role in ['admin', 'hr'] %}
+                                        <form method="POST" action="{{ url_for('delete_skill', skill_id=skill.id) }}" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this skill?')">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="text-muted small">No skills added yet. Click "Add Skills" to showcase your expertise.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Certifications Section -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">Certifications</h6>
+                        {% if user.id == current_user.id or current_user.role in ['admin', 'hr'] %}
+                        <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#addCertModal">
+                            <i class="fas fa-plus"></i> Add Certification
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        {% if user.certifications %}
+                            <div class="row">
+                                {% for cert in user.certifications %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="border rounded p-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ cert.certification_name }}</h6>
+                                                {% if cert.issuing_organization %}
+                                                <p class="text-muted small mb-1">{{ cert.issuing_organization }}</p>
+                                                {% endif %}
+                                                {% if cert.issue_date %}
+                                                <p class="text-muted small mb-1">Issued: {{ cert.issue_date.strftime('%B %Y') }}</p>
+                                                {% endif %}
+                                                {% if cert.expiry_date %}
+                                                <p class="text-muted small mb-1">Expires: {{ cert.expiry_date.strftime('%B %Y') }}</p>
+                                                {% endif %}
+                                                {% if cert.credential_id %}
+                                                <p class="text-muted small">ID: {{ cert.credential_id }}</p>
+                                                {% endif %}
+                                            </div>
+                                            {% if user.id == current_user.id or current_user.role in ['admin', 'hr'] %}
+                                            <form method="POST" action="{{ url_for('delete_certification', cert_id=cert.id) }}" class="d-inline">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this certification?')">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">No certifications added yet. Click "Add Certification" to showcase your credentials.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <!-- Private Info Tab -->
+            <div class="tab-pane fade" id="private" role="tabpanel">
+                {% if current_user.role in ['admin', 'hr'] or user.id == current_user.id %}
+                <div class="row">
+                    <!-- Personal Information -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Personal Information</h6>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editPersonalModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">Date of Birth</label>
+                                        <p class="mb-0">{{ profile_details.date_of_birth.strftime('%B %d, %Y') if profile_details.date_of_birth else 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">Gender</label>
+                                        <p class="mb-0">{{ profile_details.gender or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">Nationality</label>
+                                        <p class="mb-0">{{ profile_details.nationality or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">Marital Status</label>
+                                        <p class="mb-0">{{ profile_details.marital_status or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-12 mb-3">
+                                        <label class="form-label text-muted">Personal Email</label>
+                                        <p class="mb-0">{{ profile_details.personal_email or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-muted">Residential Address</label>
+                                        <p class="mb-0">{{ profile_details.residential_address or 'Not provided' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bank Information -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Salary / Bank Information</h6>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editBankModal">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">Account Number</label>
+                                        <p class="mb-0">{{ profile_details.account_number or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">Bank Name</label>
+                                        <p class="mb-0">{{ profile_details.bank_name or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">IFSC Code</label>
+                                        <p class="mb-0">{{ profile_details.ifsc_code or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">PAN Number</label>
+                                        <p class="mb-0">{{ profile_details.pan_number or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">UAN Number</label>
+                                        <p class="mb-0">{{ profile_details.uan_number or 'Not provided' }}</p>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <label class="form-label text-muted">Employee Code</label>
+                                        <p class="mb-0">{{ profile_details.employee_code or user.login_id }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Access Restricted</h5>
+                    <p class="text-muted">You don't have permission to view this information.</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Salary Info Tab -->
+            <div class="tab-pane fade" id="salary" role="tabpanel">
+                {% if current_user.role in ['admin', 'hr'] or user.id == current_user.id %}
+                    {% if user.salary_info %}
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0 text-success">Earnings</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">Basic Salary</small>
+                                                <p class="mb-0 fw-bold">₹{{ "{:,.2f}".format(user.salary_info.basic_salary) }}</p>
+                                            </div>
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">HRA</small>
+                                                <p class="mb-0">₹{{ "{:,.2f}".format(user.salary_info.hra) }}</p>
+                                            </div>
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">Standard Allowance</small>
+                                                <p class="mb-0">₹{{ "{:,.2f}".format(user.salary_info.standard_allowance) }}</p>
+                                            </div>
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">Performance Bonus</small>
+                                                <p class="mb-0">₹{{ "{:,.2f}".format(user.salary_info.performance_bonus) }}</p>
+                                            </div>
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">LTA</small>
+                                                <p class="mb-0">₹{{ "{:,.2f}".format(user.salary_info.lta) }}</p>
+                                            </div>
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">Fixed Allowance</small>
+                                                <p class="mb-0">₹{{ "{:,.2f}".format(user.salary_info.fixed_allowance) }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0 text-danger">Deductions</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">PF (Employee)</small>
+                                                <p class="mb-0">₹{{ "{:,.2f}".format(user.salary_info.pf_employee) }}</p>
+                                            </div>
+                                            <div class="col-6 mb-2">
+                                                <small class="text-muted">Professional Tax</small>
+                                                <p class="mb-0">₹{{ "{:,.2f}".format(user.salary_info.professional_tax) }}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <hr>
+                                        
+                                        {% set gross = user.salary_info.basic_salary + user.salary_info.hra + user.salary_info.standard_allowance + user.salary_info.performance_bonus + user.salary_info.lta + user.salary_info.fixed_allowance %}
+                                        {% set deductions = user.salary_info.pf_employee + user.salary_info.professional_tax %}
+                                        {% set net = gross - deductions %}
+                                        
+                                        <div class="text-center">
+                                            <small class="text-muted">Net Salary</small>
+                                            <h4 class="text-success mb-0">₹{{ "{:,.2f}".format(net) }}</h4>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if current_user.role in ['admin', 'hr'] %}
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('salary', employee_id=user.id) }}" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> Manage Salary
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-money-bill fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Salary Information</h5>
+                            <p class="text-muted">Salary details have not been configured yet.</p>
+                            {% if current_user.role in ['admin', 'hr'] %}
+                                <a href="{{ url_for('salary', employee_id=user.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Set Up Salary
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">Access Restricted</h5>
+                        <p class="text-muted">You don't have permission to view salary information.</p>
+                    </div>
+                {% endif %}
+            </div>
+            <!-- Security Tab (Employee Only) -->
+            {% if current_user.role == 'employee' %}
+            <div class="tab-pane fade" id="security" role="tabpanel">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Account Security</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">Password</label>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">••••••••</span>
+                                        <a href="{{ url_for('change_password') }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-key"></i> Change Password
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Login ID</label>
+                                    <p class="mb-0">{{ user.login_id }}</p>
+                                    <small class="text-muted">This cannot be changed. Contact HR if needed.</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Account Status</label>
+                                    <p class="mb-0">
+                                        <span class="badge bg-{{ 'success' if user.is_active else 'danger' }}">
+                                            {{ 'Active' if user.is_active else 'Inactive' }}
+                                        </span>
+                                    </p>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Last Updated</label>
+                                    <p class="mb-0 text-muted">{{ user.created_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Security Tips</h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <small>Use a strong, unique password</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <small>Don't share your login credentials</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <small>Log out when using shared computers</small>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fas fa-check-circle text-success me-2"></i>
+                                        <small>Report suspicious activity to IT</small>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Edit Photo Modal -->
+<div class="modal fade" id="editPhotoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Profile Picture</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <input type="hidden" name="tab" value="overview">
+                    <div class="mb-3">
+                        <label for="profile_picture" class="form-label">Choose New Picture</label>
+                        <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*" required>
+                        <div class="form-text">Supported formats: JPG, PNG, GIF. Max size: 5MB</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Picture</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit About Modal -->
+<div class="modal fade" id="editAboutModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Profile Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="tab" value="overview">
+                    <div class="mb-3">
+                        <label for="phone" class="form-label">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" value="{{ user.location or '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="about" class="form-label">About</label>
+                        <textarea class="form-control" id="about" name="about" rows="3" placeholder="Short professional description">{{ user.about or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="job_motivation" class="form-label">What I love about my job</label>
+                        <textarea class="form-control" id="job_motivation" name="job_motivation" rows="3" placeholder="Personal motivation and interests at work">{{ user.job_motivation or '' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="interests_hobbies" class="form-label">Interests and Hobbies</label>
+                        <textarea class="form-control" id="interests_hobbies" name="interests_hobbies" rows="3" placeholder="Personal interests outside work">{{ user.interests_hobbies or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<!-- Add Skill Modal -->
+<div class="modal fade" id="addSkillModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Skill</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="tab" value="skills">
+                    <div class="mb-3">
+                        <label for="skill_name" class="form-label">Skill Name</label>
+                        <input type="text" class="form-control" id="skill_name" name="skill_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="proficiency_level" class="form-label">Proficiency Level</label>
+                        <select class="form-control" id="proficiency_level" name="proficiency_level">
+                            <option value="">Select Level</option>
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                            <option value="Expert">Expert</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Skill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Certification Modal -->
+<div class="modal fade" id="addCertModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Certification</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="tab" value="certifications">
+                    <div class="mb-3">
+                        <label for="certification_name" class="form-label">Certification Name</label>
+                        <input type="text" class="form-control" id="certification_name" name="certification_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="issuing_organization" class="form-label">Issuing Organization</label>
+                        <input type="text" class="form-control" id="issuing_organization" name="issuing_organization">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="issue_date" class="form-label">Issue Date</label>
+                            <input type="date" class="form-control" id="issue_date" name="issue_date">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="expiry_date" class="form-label">Expiry Date</label>
+                            <input type="date" class="form-control" id="expiry_date" name="expiry_date">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="credential_id" class="form-label">Credential ID</label>
+                        <input type="text" class="form-control" id="credential_id" name="credential_id">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Add Certification</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Personal Info Modal -->
+<div class="modal fade" id="editPersonalModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Personal Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="tab" value="private">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="date_of_birth" class="form-label">Date of Birth</label>
+                            <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                   value="{{ profile_details.date_of_birth.strftime('%Y-%m-%d') if profile_details.date_of_birth else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="gender" class="form-label">Gender</label>
+                            <select class="form-control" id="gender" name="gender">
+                                <option value="">Select Gender</option>
+                                <option value="Male" {{ 'selected' if profile_details.gender == 'Male' else '' }}>Male</option>
+                                <option value="Female" {{ 'selected' if profile_details.gender == 'Female' else '' }}>Female</option>
+                                <option value="Other" {{ 'selected' if profile_details.gender == 'Other' else '' }}>Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="nationality" class="form-label">Nationality</label>
+                            <input type="text" class="form-control" id="nationality" name="nationality" 
+                                   value="{{ profile_details.nationality or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="marital_status" class="form-label">Marital Status</label>
+                            <select class="form-control" id="marital_status" name="marital_status">
+                                <option value="">Select Status</option>
+                                <option value="Single" {{ 'selected' if profile_details.marital_status == 'Single' else '' }}>Single</option>
+                                <option value="Married" {{ 'selected' if profile_details.marital_status == 'Married' else '' }}>Married</option>
+                                <option value="Divorced" {{ 'selected' if profile_details.marital_status == 'Divorced' else '' }}>Divorced</option>
+                                <option value="Widowed" {{ 'selected' if profile_details.marital_status == 'Widowed' else '' }}>Widowed</option>
+                            </select>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="personal_email" class="form-label">Personal Email</label>
+                            <input type="email" class="form-control" id="personal_email" name="personal_email" 
+                                   value="{{ profile_details.personal_email or '' }}">
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="residential_address" class="form-label">Residential Address</label>
+                            <textarea class="form-control" id="residential_address" name="residential_address" rows="3">{{ profile_details.residential_address or '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Bank Info Modal -->
+<div class="modal fade" id="editBankModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Edit Bank Information</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="tab" value="private">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="account_number" class="form-label">Account Number</label>
+                            <input type="text" class="form-control" id="account_number" name="account_number" 
+                                   value="{{ profile_details.account_number or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="bank_name" class="form-label">Bank Name</label>
+                            <input type="text" class="form-control" id="bank_name" name="bank_name" 
+                                   value="{{ profile_details.bank_name or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="ifsc_code" class="form-label">IFSC Code</label>
+                            <input type="text" class="form-control" id="ifsc_code" name="ifsc_code" 
+                                   value="{{ profile_details.ifsc_code or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="pan_number" class="form-label">PAN Number</label>
+                            <input type="text" class="form-control" id="pan_number" name="pan_number" 
+                                   value="{{ profile_details.pan_number or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="uan_number" class="form-label">UAN Number</label>
+                            <input type="text" class="form-control" id="uan_number" name="uan_number" 
+                                   value="{{ profile_details.uan_number or '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="employee_code" class="form-label">Employee Code</label>
+                            <input type="text" class="form-control" id="employee_code" name="employee_code" 
+                                   value="{{ profile_details.employee_code or user.login_id }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

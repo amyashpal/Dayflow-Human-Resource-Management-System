@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Dayflow HRMS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-users"></i> Employee Dashboard</h2>
+    <a href="{{ url_for('register') }}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> Add Employee
+    </a>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white" style="background-color: var(--primary-black);">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ employees|length }}</h4>
+                        <p class="mb-0">Total Employees</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ employees|selectattr('status', 'equalto', 'present')|list|length }}</h4>
+                        <p class="mb-0">Present Today</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ employees|selectattr('status', 'equalto', 'leave')|list|length }}</h4>
+                        <p class="mb-0">On Leave</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-plane fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ employees|selectattr('status', 'equalto', 'absent')|list|length }}</h4>
+                        <p class="mb-0">Absent</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Employee Grid -->
+<div class="row">
+    {% for employee in employees %}
+    <div class="col-md-4 col-lg-3 mb-4">
+        <div class="card employee-card h-100" onclick="window.location.href='{{ url_for('profile', employee_id=employee.id) }}'">
+            <div class="card-body text-center position-relative">
+                <!-- Status indicator -->
+                <div class="position-absolute top-0 end-0 m-2">
+                    {% if employee.status == 'present' %}
+                        <span class="status-indicator status-present" title="Present"></span>
+                    {% elif employee.status == 'leave' %}
+                        <i class="fas fa-plane text-info" title="On Leave"></i>
+                    {% else %}
+                        <span class="status-indicator status-absent" title="Absent"></span>
+                    {% endif %}
+                </div>
+                
+                <!-- Profile picture -->
+                <div class="mb-3">
+                    {% if employee.profile_picture %}
+                        <img src="{{ url_for('static', filename='uploads/' + employee.profile_picture) }}" 
+                             class="profile-img" alt="Profile">
+                    {% else %}
+                        <div class="bg-secondary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                             style="width: 60px; height: 60px;">
+                            <i class="fas fa-user text-white fa-lg"></i>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Employee info -->
+                <h6 class="card-title mb-1">{{ employee.first_name }} {{ employee.last_name }}</h6>
+                <small class="text-muted d-block">{{ employee.login_id }}</small>
+                <small class="text-muted d-block">{{ employee.department or 'No Department' }}</small>
+                <span class="badge bg-{{ 'success' if employee.role == 'admin' else 'info' if employee.role == 'hr' else 'secondary' }} mt-2">
+                    {{ employee.role.title() }}
+                </span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if not employees %}
+<div class="text-center py-5">
+    <i class="fas fa-users fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">No employees found</h4>
+    <p class="text-muted">Start by adding your first employee</p>
+    <a href="{{ url_for('register') }}" class="btn btn-primary">
+        <i class="fas fa-user-plus"></i> Add Employee
+    </a>
+</div>
+{% endif %}
+{% endblock %}
